@@ -1,9 +1,4 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 
 ## Loading and preprocessing the data
@@ -17,7 +12,8 @@ Data is loaded by reading the CSV file and casting the `steps` and `interval` va
 
 [^1]: Also note that the string `date` variable is factorized.
 
-```{r}
+
+```r
 raw_data <- read.csv(".//activity.csv",
               colClasses=c("integer", "character", "integer"),
               stringsAsFactors=TRUE,
@@ -34,11 +30,16 @@ raw_data[,"datetime"] <- aux_datetime
 strftime(raw_data[289 + 238, "datetime"], format="%b %d %Y, %H:%M:%S")
 ```
 
+```
+## [1] "Oct 02 2012, 19:50:00"
+```
+
 
 ## What is mean total number of steps taken per day?
 The mean number of steps per day is calculated ignoring `NA` values (the daily median is uniformly zero):
 
-```{r}
+
+```r
 # Calculate mean by day, ignoring `NA` values
 daily_mean <- aggregate(raw_data[,"steps"]~raw_data[,"date"], FUN=mean, na.action=na.omit)
 # Calculate median by day, ignoring `NA` values
@@ -49,7 +50,8 @@ daily_sum <- aggregate(raw_data[,"steps"]~raw_data[,"date"], FUN=sum, na.action=
 global_mean <- mean(daily_sum[,2])
 global_median <- median(daily_sum[,2])
 ```
-```{r, echo=TRUE, fig.width=12}
+
+```r
 # Plot results
 par(mfrow=c(1,2))
 plot(as.Date(daily_mean[,1]), daily_mean[,2],
@@ -66,9 +68,12 @@ hist(daily_sum[,2]/1000,
 rug(daily_sum[,2]/1000)
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
+
 Calculating the global mean and median steps per day[^2]:
 
-```{r}
+
+```r
 # Assemble table
 summary_table <- data.frame(
   Op=c("Mean [kilosteps]", "Median [kilosteps]"),
@@ -79,13 +84,21 @@ knitr::kable(summary_table,
              col.names=c("Operation", "NAs Ignored"))
 ```
 
-[^2]: The mean of `r sprintf(global_mean/1000, fmt="%6.3f")` kilosteps per day averages to `r sprintf(global_mean/((24-8)*60), fmt="%6.3f")` steps per waking minute or `r sprintf(global_mean/(24-8)*0.000473485, fmt="%6.3f")` miles per hour, assuming a 16-hour waking day and 2.5 foot (76 cm) step.
+
+
+Operation             NAs Ignored
+-------------------  ------------
+Mean [kilosteps]         10.76619
+Median [kilosteps]       10.76500
+
+[^2]: The mean of 10.766 kilosteps per day averages to 11.215 steps per waking minute or  0.319 miles per hour, assuming a 16-hour waking day and 2.5 foot (76 cm) step.
 
 
 ## What is the average daily activity pattern?
 The average daily activity pattern is computed by calculating the mean value across each time interval over all days. This is acheived by repeating the process used to calculate the daily mean and median above. In these calculations, `NA` values are ignored.
 
-```{r, fig.align="center"}
+
+```r
 # Calculate mean by time interval, ignoring `NA` values
 interval_mean <- aggregate(raw_data[,"steps"]~raw_data[,"interval"], FUN=mean, na.action=na.omit)
 # Find time interval with maximum average number of steps
@@ -105,13 +118,16 @@ text(max_mean_interval+100, max_mean_steps,
      adj=c(0,0.5))
 ```
 
-The maximum average number of steps (`r sprintf(max_mean_steps, fmt="%3.1f")`) occurs in the `r strftime(max_mean_time, format="%H:%M")` interval.
+<img src="PA1_template_files/figure-html/unnamed-chunk-5-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+The maximum average number of steps (206.2) occurs in the 08:35 interval.
 
 
 ## Imputing missing values
 Finding incomplete entries and replacing these entries by their interval's mean value:
 
-```{r}
+
+```r
 # Identify incomplete entries and count
 entry_is_inc <- is.na(raw_data[,"steps"])
 inc_entry_intervals <- raw_data[entry_is_inc, "interval"]
@@ -133,7 +149,8 @@ filled_daily_sum <- aggregate(filled_data[,"steps"]~filled_data[,"date"], FUN=su
 filled_global_mean <- mean(filled_daily_sum[,2])
 filled_global_median <- median(filled_daily_sum[,2])
 ```
-```{r, echo=TRUE, fig.width=12}
+
+```r
 # Plot results
 par(mfrow=c(1,2))
 plot(as.Date(filled_daily_mean[,1]), filled_daily_mean[,2],
@@ -150,9 +167,12 @@ hist(filled_daily_sum[,2]/1000,
 rug(daily_sum[,2]/1000)
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png) 
+
 Comparing the results of the global mean and median calculations when ignoring `NA` values to the that for the imputed data:
 
-```{r, results="asis"}
+
+```r
 # Assemble table
 summary_table <- data.frame(
   Op=c("Mean [kilosteps]", "Median [kilosteps]"),
@@ -165,12 +185,20 @@ knitr::kable(summary_table,
              col.names=c("Operation", "NAs Ignored", "Imputed Data", "Difference"))
 ```
 
+
+
+Operation             NAs Ignored   Imputed Data   Difference
+-------------------  ------------  -------------  -----------
+Mean [kilosteps]         10.76619       10.76619    0.0000000
+Median [kilosteps]       10.76500       10.76619    0.0011887
+
 When compared to the prior (`NA`s-ignored) results, as expected the mean does not change while the median is shifted upwards by roughly one step.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 To explore any difference in activity levels during the weekdays versus weekends, add a factor variable and calculate the average steps per interval:
-```{r}
+
+```r
 # Add weekend indicator
 filled_data[,"week_day"] <- as.numeric(strftime(aux_datetime, format="%u"))
 # Calculate means by weekday/weekend
@@ -181,7 +209,8 @@ weekend_subset <- subset(filled_data, week_day < 6, select=c("interval", "steps"
 weekday_daily_mean <- aggregate(weekday_subset[,"steps"]~weekday_subset[,"interval"], FUN=mean)
 weekend_daily_mean <- aggregate(weekend_subset[,"steps"]~weekend_subset[,"interval"], FUN=mean)
 ```
-```{r, echo=TRUE, fig.width=12}
+
+```r
 # Plot
 #   I've intentially chosen to create a panel plot laterally instead of vertically as shown in the
 #   assignment example- I feel this still respects the request made in the assignment.
@@ -198,3 +227,5 @@ plot(weekend_daily_mean[,1], weekend_daily_mean[,2],
      col="blue",
      main="Weekend Daily Average Number of Steps")
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png) 
